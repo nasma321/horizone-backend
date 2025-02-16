@@ -1,81 +1,122 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
+
 import Hotel from "../infrastructure/schemas/Hotel";
+import NotFoundError from "../domain/errors/not-found-error";
+import ValidationError from "../domain/errors/validation-error";
 
-export const getAllHotels = async (req: Request, res: Response) => {
-  const hotels = await Hotel.find();
-  res.status(200).json(hotels);
-  return;
-};
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const getHotelById = async (req: Request, res: Response) => {
-  const hotelId = req.params.id;
-  const hotel = await Hotel.findById(hotelId);
-  if (!hotel) {
-    res.status(404).send();
+export const getAllHotels = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const hotels = await Hotel.find();
+    res.status(200).json(hotels);
     return;
+  } catch (error) {
+    next(error);
   }
-
-  res.status(200).json(hotel);
-  return;
 };
 
-export const createHotel = async (req: Request, res: Response) => {
-  const hotel = req.body;
+export const getHotelById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const hotelId = req.params.id;
+    const hotel = await Hotel.findById(hotelId);
+    if (!hotel) {
+      throw new NotFoundError("Hotel not found");
+    }
 
-  if (
-    !hotel.name ||
-    !hotel.location ||
-    !hotel.rating ||
-    !hotel.reviews ||
-    !hotel.image ||
-    !hotel.price ||
-    !hotel.description
-  ) {
-    res.status(400).send();
+    res.status(200).json(hotel);
     return;
+  } catch (error) {
+    next(error);
   }
-
-  await Hotel.create({
-    name: hotel.name,
-    location: hotel.location,
-    rating: parseFloat(hotel.rating),
-    reviews: parseInt(hotel.reviews),
-    image: hotel.image,
-    price: parseInt(hotel.price),
-    description: hotel.description,
-  });
-
-  res.status(201).send();
-  return;
 };
 
-export const deleteHotel = async (req: Request, res: Response) => {
-  const hotelId = req.params.id;
-  await Hotel.findByIdAndDelete(hotelId);
+export const createHotel = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const hotel = req.body;
+    if (
+      !hotel.name ||
+      !hotel.location ||
+      !hotel.rating ||
+      !hotel.reviews ||
+      !hotel.image ||
+      !hotel.price ||
+      !hotel.description
+    ) {
+      throw new ValidationError("Invalid hotel data");
+    }
 
-  res.status(200).send();
-  return;
-};
+    await Hotel.create({
+      name: hotel.name,
+      location: hotel.location,
+      rating: parseFloat(hotel.rating),
+      reviews: parseInt(hotel.reviews),
+      image: hotel.image,
+      price: parseInt(hotel.price),
+      description: hotel.description,
+    });
 
-export const updateHotel = async (req: Request, res: Response) => {
-  const hotelId = req.params.hotelId;
-  const updatedHotel = req.body;
-
-  if (
-    !updatedHotel.name ||
-    !updatedHotel.location ||
-    !updatedHotel.rating ||
-    !updatedHotel.reviews ||
-    !updatedHotel.image ||
-    !updatedHotel.price ||
-    !updatedHotel.description
-  ) {
-    res.status(400).send();
+    res.status(201).send();
     return;
+  } catch (error) {
+    next(error);
   }
+};
 
-  await Hotel.findByIdAndUpdate(hotelId, updatedHotel);
+export const deleteHotel = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const hotelId = req.params.id;
+    await Hotel.findByIdAndDelete(hotelId);
 
-  res.status(200).send();
-  return;
+    res.status(200).send();
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateHotel = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const hotelId = req.params.hotelId;
+    const updatedHotel = req.body;
+
+    if (
+      !updatedHotel.name ||
+      !updatedHotel.location ||
+      !updatedHotel.rating ||
+      !updatedHotel.reviews ||
+      !updatedHotel.image ||
+      !updatedHotel.price ||
+      !updatedHotel.description
+    ) {
+      throw new ValidationError("Invalid hotel data");
+    }
+
+    await Hotel.findByIdAndUpdate(hotelId, updatedHotel);
+
+    res.status(200).send();
+    return;
+  } catch (error) {
+    next(error);
+  }
 };
