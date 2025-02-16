@@ -1,10 +1,10 @@
 import "dotenv/config";
 import express from "express";
-import connectDB from "./infrastructure/db.js";
+import connectDB from "./infrastructure/db";
 
-import hotelsRouter from "./api/hotel.js";
-import usersRouter from "./api/user.js";
-import bookingsRouter from "./api/booking.js";
+import hotelsRouter from "./api/hotel";
+import usersRouter from "./api/user";
+import bookingsRouter from "./api/booking";
 import cors from "cors";
 
 const app = express();

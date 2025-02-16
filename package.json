@@ -1,12 +1,11 @@
 {
   "name": "back-end",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.ts",
+    "start": "ts-nonde src/index.ts"
   },
   "author": "Nasma Najeeb",
-  "type": "module",
   "license": "ISC",
   "description": "",
   "dependencies": {
@@ -15,5 +14,14 @@
     "express": "4.21.2",
     "mongoose": "^8.9.5",
     "nodemon": "^3.1.9"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/mongoose": "^5.11.97",
+    "@types/node": "^20.17.19",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }

@@ -1,6 +1,7 @@
-import Booking from "../infrastructure/schemas/Booking.js";
+import { Request, Response } from "express";
+import Booking from "../infrastructure/schemas/Booking";
 
-export const createBooking = async (req, res) => {
+export const createBooking = async (req: Request, res: Response) => {
   const booking = req.body;
 
   if (
@@ -26,7 +27,7 @@ export const createBooking = async (req, res) => {
   return;
 };
 
-export const getAllBookingsForHotel = async (req, res) => {
+export const getAllBookingsForHotel = async (req: Request, res: Response) => {
   const hotelId = req.params.hotelId;
   const bookings = await Booking.find({ hotelId: hotelId }).populate("userId");
 
@@ -34,7 +35,7 @@ export const getAllBookingsForHotel = async (req, res) => {
   return;
 };
 
-export const getAllBookings = async (req, res) => {
+export const getAllBookings = async (req: Request, res: Response) => {
   const bookings = await Booking.find();
   res.status(200).json(bookings);
   return;

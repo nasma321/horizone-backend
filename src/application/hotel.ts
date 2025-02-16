@@ -1,12 +1,13 @@
-import Hotel from "../infrastructure/schemas/Hotel.js";
+import { Request, Response } from "express";
+import Hotel from "../infrastructure/schemas/Hotel";
 
-export const getAllHotels = async (req, res) => {
+export const getAllHotels = async (req: Request, res: Response) => {
   const hotels = await Hotel.find();
   res.status(200).json(hotels);
   return;
 };
 
-export const getHotelById = async (req, res) => {
+export const getHotelById = async (req: Request, res: Response) => {
   const hotelId = req.params.id;
   const hotel = await Hotel.findById(hotelId);
   if (!hotel) {
@@ -18,7 +19,7 @@ export const getHotelById = async (req, res) => {
   return;
 };
 
-export const createHotel = async (req, res) => {
+export const createHotel = async (req: Request, res: Response) => {
   const hotel = req.body;
 
   if (
@@ -48,7 +49,7 @@ export const createHotel = async (req, res) => {
   return;
 };
 
-export const deleteHotel = async (req, res) => {
+export const deleteHotel = async (req: Request, res: Response) => {
   const hotelId = req.params.id;
   await Hotel.findByIdAndDelete(hotelId);
 
@@ -56,7 +57,7 @@ export const deleteHotel = async (req, res) => {
   return;
 };
 
-export const updateHotel = async (req, res) => {
+export const updateHotel = async (req: Request, res: Response) => {
   const hotelId = req.params.hotelId;
   const updatedHotel = req.body;
 
