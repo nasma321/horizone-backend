@@ -3,6 +3,9 @@ import { NextFunction, Request, Response } from "express";
 import Hotel from "../infrastructure/schemas/Hotel";
 import NotFoundError from "../domain/errors/not-found-error";
 import ValidationError from "../domain/errors/validation-error";
+import { CreateHotelDTO } from "../domain/dtos/hotel";
+
+import OpenAI from "openai";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -39,29 +42,52 @@ export const getHotelById = async (
   }
 };
 
+export const generateResponse = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { prompt } = req.body;
+
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  const completion = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "user", content: prompt },
+    ],
+    store: true,
+  });
+
+  res.status(200).json({
+    message: {
+      role: "assistant",
+      content: completion.choices[0].message.content,
+    },
+  });
+  return;
+};
+
 export const createHotel = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
-    const hotel = req.body;
-    if (
-      !hotel.name ||
-      !hotel.location ||
-      !hotel.image ||
-      !hotel.price ||
-      !hotel.description
-    ) {
-      throw new ValidationError("Invalid hotel data");
+    const hotel = CreateHotelDTO.safeParse(req.body);
+
+    if (!hotel.success) {
+      throw new ValidationError(hotel.error.message);
     }
 
     await Hotel.create({
-      name: hotel.name,
-      location: hotel.location,
-      image: hotel.image,
-      price: parseInt(hotel.price),
-      description: hotel.description,
+      name: hotel.data.name,
+      location: hotel.data.location,
+      image: hotel.data.image,
+      price: parseInt(hotel.data.price),
+      description: hotel.data.description,
     });
 
     res.status(201).send();
