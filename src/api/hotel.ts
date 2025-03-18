@@ -9,6 +9,7 @@ import {
 } from "./../application/hotel";
 import { isAuthenticated } from './middlewares/authentication-middleware';
 import { isAdmin } from './middlewares/authorization-middleware';
+import { CreateEmbeddings } from "./embedding";
 
 const hotelsRouter = express.Router();
 
@@ -18,6 +19,6 @@ hotelsRouter
   .get(getHotelById)
   .put(updateHotel)
   .delete(deleteHotel);
-hotelsRouter.route("/llm").post(generateResponse);
+hotelsRouter.route("/embeddings/create").post(CreateEmbeddings);
 
 export default hotelsRouter;
