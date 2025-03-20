@@ -3,7 +3,6 @@ import express from "express";
 import connectDB from "./infrastructure/db";
 
 import hotelsRouter from "./api/hotel";
-import usersRouter from "./api/user";
 import bookingsRouter from "./api/booking";
 import cors from "cors";
 import globalErrorHandlingMiddleware from "./api/middlewares/global-error-handling-middleware";
