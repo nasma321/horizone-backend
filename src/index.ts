@@ -7,6 +7,7 @@ import bookingsRouter from "./api/booking";
 import cors from "cors";
 import globalErrorHandlingMiddleware from "./api/middlewares/global-error-handling-middleware";
 import { clerkMiddleware } from "@clerk/express";
+import adminRouter from "./api/admin";
 
 const app = express();
 
@@ -19,6 +20,7 @@ connectDB();
 
 app.use("/api/hotels", hotelsRouter);
 app.use("/api/bookings", bookingsRouter);
+app.use("/api/admin", adminRouter);
 
 app.use(globalErrorHandlingMiddleware);
 

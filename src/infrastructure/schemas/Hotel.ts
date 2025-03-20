@@ -9,13 +9,9 @@ const hotelSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  rating: {
-    type: Number,
-    min: 1,
-    max: 5
-  },
-  reviews: {
-    type: Number
+  description: {
+    type: String,
+    required: true,
   },
   image: {
     type: String,
@@ -25,10 +21,31 @@ const hotelSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
-  description: {
-    type: String,
-    required: true,
+  rating: {
+    type: Number,
+    default: 0,
   },
+  reviews: {
+    type: Number,
+    default: 0,
+  },
+  amenities: {
+    type: [String],
+    default: [],
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+hotelSchema.pre("save", function(next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 const Hotel = mongoose.model("Hotel", hotelSchema);
