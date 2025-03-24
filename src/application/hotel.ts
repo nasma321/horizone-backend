@@ -15,8 +15,35 @@ export const getAllHotels = async (
   next: NextFunction
 ) => {
   try {
-    const hotels = await Hotel.find();
+    const { location, sortBy, order } = req.query;
+    
+    const query: any = {};
+    if (location) {
+      query.location = { $regex: new RegExp(location as string, 'i') };
+    }
+    
+    const sortOptions: any = {};
+    if (sortBy === 'price') {
+      sortOptions.price = order === 'desc' ? -1 : 1;
+    }
+    
+    const hotels = await Hotel.find(query).sort(Object.keys(sortOptions).length ? sortOptions : {});
+    
     res.status(200).json(hotels);
+    return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getHotelLocations = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const locations = await Hotel.distinct('location');
+    res.status(200).json(locations);
     return;
   } catch (error) {
     next(error);

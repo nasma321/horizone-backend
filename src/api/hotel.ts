@@ -5,6 +5,7 @@ import {
   generateResponse,
   getAllHotels,
   getHotelById,
+  getHotelLocations,
   updateHotel,
 } from "./../application/hotel";
 import { isAuthenticated } from './middlewares/authentication-middleware';
@@ -15,6 +16,7 @@ import { retrieve } from "../application/retrieve";
 const hotelsRouter = express.Router();
 
 hotelsRouter.route("/").get(getAllHotels).post(isAuthenticated, isAdmin, createHotel);
+hotelsRouter.route("/locations").get(getHotelLocations);
 hotelsRouter
   .route("/:id")
   .get(getHotelById)
