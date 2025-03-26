@@ -115,6 +115,9 @@ export const createHotel = async (
       image: hotel.data.image,
       price: parseInt(hotel.data.price),
       description: hotel.data.description,
+      amenities: hotel.data.amenities || [],   // Save amenities
+      policies: hotel.data.policies || {},     // Save policies
+      rooms: hotel.data.rooms || []            // Save room information
     });
 
     res.status(201).send();
@@ -149,11 +152,10 @@ export const updateHotel = async (
     const hotelId = req.params.hotelId;
     const updatedHotel = req.body;
 
+    // Simplified validation to accept additional fields
     if (
       !updatedHotel.name ||
       !updatedHotel.location ||
-      !updatedHotel.rating ||
-      !updatedHotel.reviews ||
       !updatedHotel.image ||
       !updatedHotel.price ||
       !updatedHotel.description
