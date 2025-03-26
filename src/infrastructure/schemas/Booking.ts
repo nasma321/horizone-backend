@@ -18,6 +18,11 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  roomType: {
+    type: String,
+    enum: ['Standard', 'Deluxe', 'Suite', 'Presidential'],
+    default: 'Standard'
+  },
   checkIn: {
     type: Date,
     required: true,

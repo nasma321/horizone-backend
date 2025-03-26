@@ -5,9 +5,11 @@ export const CreateBookingDTO = z.object({
     required_error: "Hotel ID is required",
     invalid_type_error: "Hotel ID must be a string"
   }),
-  roomNumber: z.number({
-    required_error: "Room number is required",
-    invalid_type_error: "Room number must be a number"
+  roomType: z.string({
+    required_error: "Room type is required",
+    invalid_type_error: "Room type must be a string"
+  }).refine(type => ['Standard', 'Deluxe', 'Suite', 'Presidential'].includes(type), {
+    message: "Invalid room type. Must be one of: Standard, Deluxe, Suite, Presidential"
   }),
   checkIn: z.string({
     required_error: "Check-in date is required",
@@ -25,8 +27,8 @@ export const CreateBookingDTO = z.object({
     invalid_type_error: "Check-out date must be a string"
   }),
   guests: z.object({
-    adults: z.number().min(1).default(1),
-    children: z.number().min(0).default(0)
+    adults: z.number().min(1).max(6).default(1),
+    children: z.number().min(0).max(4).default(0)
   }).optional(),
   specialRequests: z.string().optional()
 }).refine(data => {
