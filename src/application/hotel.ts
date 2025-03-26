@@ -109,11 +109,15 @@ export const createHotel = async (
       throw new ValidationError(hotel.error.message);
     }
 
+    const price = typeof hotel.data.price === 'string' 
+      ? parseInt(hotel.data.price, 10) 
+      : hotel.data.price;
+
     await Hotel.create({
       name: hotel.data.name,
       location: hotel.data.location,
       image: hotel.data.image,
-      price: parseInt(hotel.data.price),
+      price: price,
       description: hotel.data.description,
       amenities: hotel.data.amenities || [],   // Save amenities
       policies: hotel.data.policies || {},     // Save policies
