@@ -3,8 +3,11 @@
         "sourceMap": true,
         "outDir": "dist",
         "strict": true,
-        "lib": ["esnext"],
-        "esModuleInterop": true
+        "lib": ["esnext", "dom"],
+        "esModuleInterop": true,
+        "target": "es2015",
+        "module": "commonjs",
+        "skipLibCheck": true
     },
     "include": ["src/**/*.ts"],
     "exclude": ["node_modules"]
