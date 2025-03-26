@@ -1,13 +1,23 @@
 import express from "express";
 import {
   createBooking,
+  getUserBookings,
+  getBookingById,
+  cancelBooking,
   getAllBookingsForHotel,
   getAllBookings,
-} from "./../application/booking";
+} from "../application/booking";
+import { isAuthenticated } from './middlewares/authentication-middleware';
+import { isAdmin } from './middlewares/authorization-middleware';
 
 const bookingsRouter = express.Router();
 
-bookingsRouter.route("/").post(createBooking).get(getAllBookings);
-bookingsRouter.route("/hotels/:hotelId").get(getAllBookingsForHotel);
+bookingsRouter.post("/", isAuthenticated, createBooking);
+bookingsRouter.get("/user", isAuthenticated, getUserBookings);
+bookingsRouter.get("/:id", isAuthenticated, getBookingById);
+bookingsRouter.put("/:id/cancel", isAuthenticated, cancelBooking);
+
+bookingsRouter.get("/admin/all", isAuthenticated, isAdmin, getAllBookings);
+bookingsRouter.get("/admin/hotel/:hotelId", isAuthenticated, isAdmin, getAllBookingsForHotel);
 
 export default bookingsRouter;

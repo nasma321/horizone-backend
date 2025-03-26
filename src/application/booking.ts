@@ -1,9 +1,12 @@
 import { NextFunction, Request, Response } from "express";
-
 import Booking from "../infrastructure/schemas/Booking";
-import { CreateBookingDTO } from "../domain/dtos/booking";
+import Hotel from "../infrastructure/schemas/Hotel";
+import { CreateBookingDTO, UpdateBookingStatusDTO } from "../domain/dtos/booking";
 import ValidationError from "../domain/errors/validation-error";
+import NotFoundError from "../domain/errors/not-found-error";
+import UnauthorizedError from "../domain/errors/unauthorized-error";
 import { clerkClient } from "@clerk/express";
+import mongoose from "mongoose";
 
 export const createBooking = async (
   req: Request,
@@ -12,23 +15,194 @@ export const createBooking = async (
 ) => {
   try {
     const booking = CreateBookingDTO.safeParse(req.body);
-    console.log(booking);
+    
     if (!booking.success) {
-      throw new ValidationError(booking.error.message)
+      throw new ValidationError(booking.error.message);
     }
 
     const user = req.auth;
+    if (!user || !user.userId) {
+      throw new UnauthorizedError("User must be authenticated to create a booking");
+    }
 
-    await Booking.create({
+    const hotel = await Hotel.findById(booking.data.hotelId);
+    if (!hotel) {
+      throw new NotFoundError("Hotel not found");
+    }
+
+    const room = hotel.rooms.find(r => r.roomNumber === booking.data.roomNumber);
+    if (!room) {
+      throw new NotFoundError("Room not found");
+    }
+
+    if (!room.available) {
+      throw new ValidationError("Room is not available for the selected dates");
+    }
+
+    const checkIn = new Date(booking.data.checkIn);
+    const checkOut = new Date(booking.data.checkOut);
+    const nights = Math.ceil((checkOut.getTime() - checkIn.getTime()) / (1000 * 3600 * 24));
+    
+    if (nights <= 0) {
+      throw new ValidationError("Check-out date must be after check-in date");
+    }
+
+    const totalPrice = room.price * nights;
+
+    const newBooking = await Booking.create({
       hotelId: booking.data.hotelId,
       userId: user.userId,
+      roomId: room._id,
+      roomNumber: booking.data.roomNumber,
       checkIn: booking.data.checkIn,
       checkOut: booking.data.checkOut,
-      roomNumber: booking.data.roomNumber,
+      guests: booking.data.guests || { adults: 1, children: 0 },
+      totalPrice: totalPrice,
+      specialRequests: booking.data.specialRequests || "",
+      status: 'confirmed',
+      paymentStatus: 'pending'
     });
 
-    res.status(201).send();
-    return;
+    room.available = false;
+    await hotel.save();
+
+    res.status(201).json({
+      message: "Booking created successfully",
+      bookingId: newBooking._id,
+      totalPrice
+    });
+    
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getUserBookings = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const userId = req.auth.userId;
+    
+    if (!userId) {
+      throw new UnauthorizedError("User must be authenticated to view bookings");
+    }
+
+    const bookings = await Booking.find({ userId }).sort({ createdAt: -1 });
+
+    const bookingsWithDetails = await Promise.all(bookings.map(async (booking) => {
+      const hotel = await Hotel.findById(booking.hotelId);
+      return {
+        _id: booking._id,
+        hotelId: booking.hotelId,
+        checkIn: booking.checkIn,
+        checkOut: booking.checkOut,
+        roomNumber: booking.roomNumber,
+        totalPrice: booking.totalPrice,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus,
+        createdAt: booking.createdAt,
+        hotel: hotel ? {
+          name: hotel.name,
+          location: hotel.location,
+          image: hotel.image
+        } : null
+      };
+    }));
+
+    res.status(200).json(bookingsWithDetails);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getBookingById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.auth.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      throw new ValidationError("Invalid booking ID");
+    }
+
+    const booking = await Booking.findById(bookingId);
+    
+    if (!booking) {
+      throw new NotFoundError("Booking not found");
+    }
+
+    if (booking.userId !== userId) {
+      throw new UnauthorizedError("Not authorized to view this booking");
+    }
+
+    const hotel = await Hotel.findById(booking.hotelId);
+
+    res.status(200).json({
+      ...booking.toObject(),
+      hotel: hotel ? {
+        name: hotel.name,
+        location: hotel.location,
+        image: hotel.image,
+        policies: hotel.policies
+      } : null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const cancelBooking = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const bookingId = req.params.id;
+    const userId = req.auth.userId;
+
+    if (!mongoose.Types.ObjectId.isValid(bookingId)) {
+      throw new ValidationError("Invalid booking ID");
+    }
+
+    const booking = await Booking.findById(bookingId);
+    
+    if (!booking) {
+      throw new NotFoundError("Booking not found");
+    }
+
+    if (booking.userId !== userId) {
+      throw new UnauthorizedError("Not authorized to cancel this booking");
+    }
+
+    if (booking.status === 'cancelled') {
+      throw new ValidationError("Booking is already cancelled");
+    }
+
+    if (['checked-in', 'checked-out'].includes(booking.status)) {
+      throw new ValidationError(`Cannot cancel a booking that is already ${booking.status}`);
+    }
+
+    booking.status = 'cancelled';
+    booking.paymentStatus = 'refunded';
+    await booking.save();
+
+    const hotel = await Hotel.findById(booking.hotelId);
+    if (hotel) {
+      const room = hotel.rooms.find(r => r.roomNumber === booking.roomNumber);
+      if (room) {
+        room.available = true;
+        await hotel.save();
+      }
+    }
+
+    res.status(200).json({
+      message: "Booking cancelled successfully"
+    });
   } catch (error) {
     next(error);
   }
@@ -41,14 +215,32 @@ export const getAllBookingsForHotel = async (
 ) => {
   try {
     const hotelId = req.params.hotelId;
-    const bookings = await Booking.find({ hotelId: hotelId });
-    const bookingsWithUser = await Promise.all(bookings.map(async (el) => {
-      const user = await clerkClient.users.getUser(el.userId);
-      return { _id: el._id, hotelId: el.hotelId, checkIn: el.checkIn, checkOut: el.checkOut, roomNumber: el.roomNumber, user: { id: user.id, firstName: user.firstName, lastName: user.lastName } }
-    }))
+        
+    const bookings = await Booking.find({ hotelId }).sort({ createdAt: -1 });
+    
+    const bookingsWithUser = await Promise.all(bookings.map(async (booking) => {
+      const user = await clerkClient.users.getUser(booking.userId);
+      
+      return { 
+        _id: booking._id, 
+        hotelId: booking.hotelId, 
+        checkIn: booking.checkIn, 
+        checkOut: booking.checkOut, 
+        roomNumber: booking.roomNumber,
+        totalPrice: booking.totalPrice,
+        status: booking.status,
+        paymentStatus: booking.paymentStatus,
+        createdAt: booking.createdAt,
+        user: { 
+          id: user.id, 
+          firstName: user.firstName, 
+          lastName: user.lastName,
+          email: user.emailAddresses[0]?.emailAddress
+        } 
+      };
+    }));
 
     res.status(200).json(bookingsWithUser);
-    return;
   } catch (error) {
     next(error);
   }
@@ -59,11 +251,10 @@ export const getAllBookings = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const bookings = await Booking.find();
+  try {    
+    const bookings = await Booking.find().sort({ createdAt: -1 });
 
     res.status(200).json(bookings);
-    return;
   } catch (error) {
     next(error);
   }
