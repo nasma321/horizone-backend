@@ -62,14 +62,22 @@ const hotelSchema = new mongoose.Schema({
   rooms: {
     type: [roomSchema],
     default: function() {
-      // Generate 10 default rooms when a new hotel is created
+      // Generate 10 default rooms with fixed prices instead of referencing this.price
       const defaultRooms = [];
+      const basePrice = 100; // Default base price
+      
       for(let i = 101; i <= 110; i++) {
+        const roomType = i % 4 === 0 ? 'Deluxe' : i % 4 === 1 ? 'Suite' : 'Standard';
+        // Adjust price based on room type
+        let roomPrice = basePrice;
+        if (roomType === 'Deluxe') roomPrice = 150;
+        if (roomType === 'Suite') roomPrice = 200;
+        
         defaultRooms.push({
           roomNumber: i,
-          type: i % 4 === 0 ? 'Deluxe' : i % 4 === 1 ? 'Suite' : 'Standard',
+          type: roomType,
           capacity: i % 3 + 1,
-          price: this.price, // Base price from the hotel
+          price: roomPrice, // Use calculated price instead of this.price
           available: true
         });
       }
