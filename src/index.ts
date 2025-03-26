@@ -14,14 +14,13 @@ const app = express();
 app.use(clerkMiddleware());
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: "https://aidf-horizone-frontend-nasma.netlify.app" }));
 
-connectDB();
 
 app.use("/api/hotels", hotelsRouter);
 app.use("/api/bookings", bookingsRouter);
 
 app.use(globalErrorHandlingMiddleware);
-
-const PORT = 8001;
-app.listen(PORT, console.log(`Server is running on port ${PORT}...`));
+connectDB();
+const PORT = process.env.PORT || 8001;
+app.listen(PORT, () => console.log(`Server is running on port ${PORT}...`));
