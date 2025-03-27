@@ -13,18 +13,39 @@ export const CreateEmbeddings = async (req: Request, res: Response, next: NextFu
         });
 
         const vectorIndex = new MongoDBAtlasVectorSearch(embeddingsModel, {
-            collection: mongoose.connection.collection("hotelVecotrs"),
+            collection: mongoose.connection.collection("hotelVectors"),
             indexName: "vector_index"
         });
 
         const hotels = await Hotel.find();
 
         const docs = hotels.map((hotel) => {
-            const { _id, location, price, description } = hotel;
+            const { _id, location, price, description, amenities, name, rating } = hotel;
+            
+            // Create a comprehensive text representation of the hotel
+            const roomTypes = [...new Set(hotel.rooms.map(room => room.type))];
+            const roomPrices = hotel.rooms.map(room => room.price);
+            const minRoomPrice = Math.min(...roomPrices);
+            const maxRoomPrice = Math.max(...roomPrices);
+            
+            const pageContent = `
+                Hotel Name: ${name}
+                Location: ${location}
+                Base Price: ${price} per night
+                Room Price Range: ${minRoomPrice} to ${maxRoomPrice} per night
+                Rating: ${rating || 'Not rated'} stars
+                Room Types Available: ${roomTypes.join(', ')}
+                Amenities: ${amenities.join(', ')}
+                Description: ${description}
+            `;
+            
             const doc = new Document({
-                pageContent: `${description} Located in ${location}. Price per night: ${price}`,
+                pageContent: pageContent.trim(),
                 metadata: {
-                    _id
+                    _id,
+                    location,
+                    price,
+                    amenities
                 }
             });
 
@@ -36,6 +57,6 @@ export const CreateEmbeddings = async (req: Request, res: Response, next: NextFu
         res.status(200).json({ message: "Embeddings created successfully" });
 
     } catch (error) {
-        
+        next(error);
     }
 }
