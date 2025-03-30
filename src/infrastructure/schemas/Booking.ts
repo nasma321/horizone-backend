@@ -22,6 +22,10 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  roomType: { 
+    type: String,
+    default: 'Standard'
+  },
   totalPrice: {
     type: Number,
     required: true,

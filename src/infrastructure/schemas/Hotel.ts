@@ -59,6 +59,9 @@ const hotelSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  stripePriceId: {
+    type: String,
+  },
   rooms: {
     type: [roomSchema],
     default: function() {
@@ -100,9 +103,6 @@ const hotelSchema = new mongoose.Schema({
     cancellationPolicy: {
       type: String,
       default: "Free cancellation up to 24 hours before check-in"
-    },
-    stripePriceId: {
-      type: String,
     }
   }
 });

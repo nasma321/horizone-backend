@@ -82,7 +82,6 @@ export const createCheckoutSession = async (req: Request, res: Response) => {
     let lineItems;
     let unitAmount = Math.round(hotel.price * 100); // Price in cents
 
-    // If hotel has a Stripe price ID, use it
     if (hotel.stripePriceId) {
       lineItems = [{
         price: hotel.stripePriceId,
