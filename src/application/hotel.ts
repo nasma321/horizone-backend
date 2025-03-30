@@ -7,6 +7,8 @@ import { CreateHotelDTO } from "../domain/dtos/hotel";
 
 import OpenAI from "openai";
 
+import stripe from "../infrastructure/stripe";
+
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const getAllHotels = async (
@@ -110,25 +112,31 @@ export const createHotel = async (req: Request, res: Response) => {
     }
 
     const hotelData = validationResult.data;
-
+    
+    const priceAsNumber = parseFloat(hotelData.price);
+    
     const stripeProduct = await stripe.products.create({
       name: hotelData.name,
       description: hotelData.description,
       default_price_data: {
-        unit_amount: Math.round(parseFloat(hotelData.price) * 100),
+        unit_amount: Math.round(priceAsNumber * 100),
         currency: "usd",
       },
     });
+
+    const stripePriceId = typeof stripeProduct.default_price === 'string' 
+      ? stripeProduct.default_price 
+      : String(stripeProduct.default_price);
 
     const hotel = new Hotel({
       name: hotelData.name,
       location: hotelData.location,
       image: hotelData.image,
-      price: parseFloat(hotelData.price),
+      price: priceAsNumber,
       description: hotelData.description,
-      stripePriceId: stripeProduct.default_price,
-      rating: hotelData.rating || 4.5,
-      reviews: hotelData.reviews || 0,
+      stripePriceId: stripePriceId,
+      rating: 4.5,
+      reviews: 0,
       amenities: hotelData.amenities || [],
       rooms: hotelData.rooms || [],
       policies: hotelData.policies || {
