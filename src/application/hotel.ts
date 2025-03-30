@@ -97,37 +97,55 @@ export const generateResponse = async (
   return;
 };
 
-export const createHotel = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const createHotel = async (req: Request, res: Response) => {
   try {
-    const hotel = CreateHotelDTO.safeParse(req.body);
+    const validationResult = CreateHotelDTO.safeParse(req.body);
 
-    if (!hotel.success) {
-      throw new ValidationError(hotel.error.message);
+    if (!validationResult.success) {
+      res.status(400).json({
+        message: "Invalid hotel data",
+        errors: validationResult.error.format(),
+      });
+      return;
     }
 
-    const price = typeof hotel.data.price === 'string' 
-      ? parseInt(hotel.data.price, 10) 
-      : hotel.data.price;
+    const hotelData = validationResult.data;
 
-    await Hotel.create({
-      name: hotel.data.name,
-      location: hotel.data.location,
-      image: hotel.data.image,
-      price: price,
-      description: hotel.data.description,
-      amenities: hotel.data.amenities || [],   // Save amenities
-      policies: hotel.data.policies || {},     // Save policies
-      rooms: hotel.data.rooms || []            // Save room information
+    const stripeProduct = await stripe.products.create({
+      name: hotelData.name,
+      description: hotelData.description,
+      default_price_data: {
+        unit_amount: Math.round(parseFloat(hotelData.price) * 100),
+        currency: "usd",
+      },
     });
 
-    res.status(201).send();
-    return;
+    const hotel = new Hotel({
+      name: hotelData.name,
+      location: hotelData.location,
+      image: hotelData.image,
+      price: parseFloat(hotelData.price),
+      description: hotelData.description,
+      stripePriceId: stripeProduct.default_price,
+      rating: hotelData.rating || 4.5,
+      reviews: hotelData.reviews || 0,
+      amenities: hotelData.amenities || [],
+      rooms: hotelData.rooms || [],
+      policies: hotelData.policies || {
+        checkInTime: "14:00",
+        checkOutTime: "11:00",
+        cancellationPolicy: "Free cancellation up to 24 hours before check-in"
+      }
+    });
+
+    await hotel.save();
+    res.status(201).json(hotel);
   } catch (error) {
-    next(error);
+    console.error("Error creating hotel:", error);
+    res.status(500).json({
+      message: "Failed to create hotel",
+      error: error instanceof Error ? error.message : String(error),
+    });
   }
 };
 

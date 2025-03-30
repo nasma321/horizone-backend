@@ -10,19 +10,6 @@ const bookingSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  roomId: {
-    type: mongoose.Schema.Types.ObjectId,
-    required: true,
-  },
-  roomNumber: {
-    type: Number,
-    required: true,
-  },
-  roomType: {
-    type: String,
-    enum: ['Standard', 'Deluxe', 'Suite', 'Presidential'],
-    default: 'Standard'
-  },
   checkIn: {
     type: Date,
     required: true,
@@ -31,19 +18,13 @@ const bookingSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
-  guests: {
-    adults: {
-      type: Number,
-      default: 1
-    },
-    children: {
-      type: Number,
-      default: 0
-    }
+  roomNumber: {
+    type: Number,
+    required: true,
   },
   totalPrice: {
     type: Number,
-    required: true
+    required: true,
   },
   status: {
     type: String,
@@ -55,17 +36,20 @@ const bookingSchema = new mongoose.Schema({
     enum: ['pending', 'paid', 'refunded'],
     default: 'pending'
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  paymentMethod: {
+    type: String,
+    enum: ["card", "bank_transfer"],
+    default: "card",
   },
   specialRequests: {
     type: String,
     default: ""
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
-
-bookingSchema.index({ userId: 1 });
 
 const Booking = mongoose.model("Booking", bookingSchema);
 
